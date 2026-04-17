@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koinobori Card Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        body { 
+            margin: 0; padding: 0; background: #1a1a1a; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; font-family: 'DynaPuff', cursive; 
+            overflow: hidden; /* Prevents the "chopped" scrolling feel */
+        }
+
+        #ui-bar {
+            position: fixed; top: 15px; left: 15px; 
+            background: rgba(255, 255, 255, 0.98); 
+            padding: 8px 18px; border-radius: 50px; 
+            box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+            z-index: 1000; display: flex; align-items: center; gap: 12px;
+        }
+
+        .color-row { display: flex; gap: 5px; border-right: 2px solid #ddd; padding-right: 12px; }
+        .color-circle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #bbb; cursor: pointer; }
+
+        input#nameInput { 
+            font-family: 'DynaPuff'; font-size: 14px; padding: 6px 12px; 
+            border-radius: 20px; border: 1px solid #ccc; width: 140px;
+        }
+        
+        button { font-family: 'DynaPuff'; padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-next { background: #4caf50; color: white; }
+        .btn-save { background: #2196f3; color: white; }
+        .btn-reset { background: #eee; color: #444; }
+
+        /* THE WRAPPER: This prevents the "chopping" by creating a flexible center */
+        #stage {
+            display: flex; justify-content: center; align-items: center;
+            width: 100vw; height: 100vh;
+        }
+
+        #capture-area {
+            position: relative;
+            width: 1600px;
+            height: 900px;
+            background: #fff;
+            transform-origin: center center; /* Scale from center to avoid edge-chopping */
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        #bg-layer { position: absolute; top: 0; left: 0; width: 1600px; height: 900px; z-index: 0; }
+        .koinobori { position: absolute; transition: 0.2s; z-index: 10; }
+        
+        /* Your Exact Coordinates */
+        #img1 { width: 333.8px; height: 131.9px; left: 1107.4px; top: 30.4px; transform: rotate(-7.3deg); }
+        #img2 { width: 298.8px; height: 117.7px; left: 1174.1px; top: 163.1px; transform: rotate(-7.3deg); }
+        #img3 { width: 271.3px; height: 107.2px; left: 1234.4px; top: 292.7px; transform: rotate(-7.3deg); }
+        #img4 { width: 240.9px; height: 95.1px; left: 1281.3px; top: 423.2px; transform: rotate(-7.3deg); }
+        #img5 { width: 233.5px; height: 92.2px; left: 1305.5px; top: 555.1px; transform: rotate(-7.3deg); }
+
+        #user-name-display {
+            position: absolute;
+            left: 318px; top: 620px;
+            width: 548.6px; height: 122.5px;
+            font-size: 76.7px; color: black;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            z-index: 20;
+        }
+
+        .active-glow { outline: 8px dashed white; filter: drop-shadow(0 0 10px gold); }
+        @media print { #ui-bar { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div id="ui-bar">
+    <div class="color-row">
+        <div class="color-circle" style="background:yellow" onclick="pk('yellow')"></div>
+        <div class="color-circle" style="background:white" onclick="pk('white')"></div>
+        <div class="color-circle" style="background:black" onclick="pk('black')"></div>
+        <div class="color-circle" style="background:blue" onclick="pk('blue')"></div>
+        <div class="color-circle" style="background:red" onclick="pk('red')"></div>
+        <div class="color-circle" style="background:orange" onclick="pk('orange')"></div>
+        <div class="color-circle" style="background:pink" onclick="pk('pink')"></div>
+        <div class="color-circle" style="background:green" onclick="pk('green')"></div>
+        <div class="color-circle" style="background:purple" onclick="pk('purple')"></div>
+    </div>
+    <input type="text" id="nameInput" placeholder="Enter Name..." oninput="un()">
+    <div class="btn-group">
+        <button id="nx" class="btn-next" onclick="nxt()">Next</button>
+        <button class="btn-save" onclick="sv()">Save Card 💾</button>
+        <button class="btn-reset" onclick="rs()">Reset</button>
+    </div>
+</div>
+
+<div id="stage">
+    <div id="capture-area">
+        <img id="bg-layer" src="background.png">
+        <div id="user-name-display"></div>
+        <img id="img1" class="koinobori active-glow" src="white.png">
+        <img id="img2" class="koinobori" src="white.png">
+        <img id="img3" class="koinobori" src="white.png">
+        <img id="img4" class="koinobori" src="white.png">
+        <img id="img5" class="koinobori" src="white.png">
+    </div>
+</div>
+
+<script>
+    let c = 1;
+    function un() { document.getElementById('user-name-display').innerText = document.getElementById('nameInput').value; }
+    function pk(cl) { if(c <= 5) document.getElementById('img'+c).src = cl + '.png'; }
+    function nxt() {
+        if(c < 5) {
+            document.getElementById('img'+c).classList.remove('active-glow');
+            c++;
+            document.getElementById('img'+c).classList.add('active-glow');
+        } else {
+            document.getElementById('img5').classList.remove('active-glow');
+            document.getElementById('nx').innerText = "Done!";
+        }
+    }
+    function rs() { location.reload(); }
+
+    async function sv() {
+        const ar = document.getElementById('capture-area');
+        const glow = document.querySelector('.active-glow');
+        if(glow) glow.classList.remove('active-glow');
+
+        // Reset scaling for full-size photo
+        const oldT = ar.style.transform;
+        ar.style.transform = "none";
+
+        const canvas = await html2canvas(ar, { 
+            width: 1600, height: 900, scale: 1, 
+            useCORS: true, allowTaint: true 
+        });
+
+        ar.style.transform = oldT;
+        if(glow) glow.classList.add('active-glow');
+
+        // FORCE "SAVE AS" WINDOW
+        try {
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            // This attempts to open the Save dialog
+            const handle = await window.showSaveFilePicker({
+                suggestedName: 'My_Koinobori_Card.png',
+                types: [{ description: 'PNG Image', accept: {'image/png': ['.png']} }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } catch (err) {
+            // Fallback for browsers that don't support showSaveFilePicker (like older Chrome/Firefox)
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL("image/png");
+            a.download = 'My_Koinobori_Card.png';
+            a.click();
+        }
+    }
+
+    function sc() {
+        const ar = document.getElementById('capture-area');
+        const sW = window.innerWidth / 1600;
+        const sH = (window.innerHeight - 60) / 900;
+        const scale = Math.min(sW, sH);
+        ar.style.transform = `scale(${scale})`;
+    }
+    window.onresize = sc;
+    sc();
+</script>
+
+</body>
+</html>
